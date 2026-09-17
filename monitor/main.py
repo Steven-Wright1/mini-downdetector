@@ -2,6 +2,7 @@ import requests
 import time
 from datetime import datetime, timezone
 from dataclasses import dataclass
+from database import store_result
 
 @dataclass
 class MonitorResult:
@@ -38,7 +39,7 @@ def main():
 
     for url in monitored_urls:
         response = check_url(url)
-        print(response)
+        store_result(response)
 
 if __name__ == "__main__":
     main()
