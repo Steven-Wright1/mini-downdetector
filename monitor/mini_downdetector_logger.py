@@ -4,6 +4,7 @@ from pythonjsonlogger import jsonlogger
 logger = logging.getLogger()
 
 logger.setLevel(logging.DEBUG)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 formatter = jsonlogger.JsonFormatter(
     fmt="%(asctime)s %(levelname)s %(name)s %(message)s %(process)d",

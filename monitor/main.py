@@ -2,7 +2,7 @@ import requests
 import time
 from datetime import datetime, timezone
 from dataclasses import dataclass
-from database import store_result
+from database import store_result, db_conn_open, db_conn_close
 import mini_downdetector_logger
 import logging 
 import uuid
@@ -11,7 +11,7 @@ logger = logging.getLogger("mini-downdetector.main")
 
 @dataclass
 class MonitorResult:
-    url : str
+    url: str
     status_code: int | None
     response_time: float | None
     check_datetime: datetime
@@ -33,7 +33,7 @@ def check_url(url, txid):
         return MonitorResult(url=url, status_code=None, response_time=None, check_datetime=check_datetime, error="timeout", txid=txid)
     t_1 = time.perf_counter()
     response_time = round(t_1 - t_0, 2)
-    logger.info('HTTP request succeeded', extra={"url": url, "status_code":r.status_code, "response_time": response_time, "txid": txid})
+    logger.info('HTTP request completed', extra={"url": url, "status_code":r.status_code, "response_time": response_time, "txid": txid})
     return MonitorResult(url, r.status_code, response_time, check_datetime, None, txid)
 
 def main():
@@ -45,11 +45,18 @@ def main():
     "https://badhttp.dev/flaky/50"
     ]
 
-    for url in monitored_urls:
-        txid = str(uuid.uuid4())
-        logger.info(f'Starting monitoring', extra={"url": url, "txid": txid})
-        response = check_url(url,txid)
-        store_result(response,txid)
+    
+    db_conn = db_conn_open()
+    if db_conn is not None:
+        logger.info("Successfully connected to the database")
+        for url in monitored_urls:
+            txid = str(uuid.uuid4())
+            logger.info('Starting monitoring', extra={"url": url, "txid": txid})
+            response = check_url(url,txid)
+            store_result(response, db_conn)
+        db_conn_close(db_conn)
+    else:
+        logger.error("Error connecting to database")
 
 if __name__ == "__main__":
     main()
